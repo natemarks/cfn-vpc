@@ -1,0 +1,8 @@
+
+.idea/
+.vscode/
+*.iml
+.venv/
+taskcat_outputs/
+**/**pycache**
+.pytest_cache

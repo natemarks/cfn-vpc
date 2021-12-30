@@ -1,0 +1,9 @@
+project:
+  name: cfn-vpc
+  regions:
+  - us-east-2
+tests:
+  default:
+    template: ./topic.json
+    parameters:
+      NotificationTopicName: gggtopic
