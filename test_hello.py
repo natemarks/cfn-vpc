@@ -7,10 +7,8 @@ def test_topic():
         # Calling 'with' or 'test.run()' will deploy the stacks.
         for stack in stacks:
             print(f"Testing {stack.name}")
-            topic_name = ""
+            output_dict = {}
+
             for output in stack.outputs:
-                if output.key == "NotificationTopic":
-                    topic_name = output.value
-                    break
-            assert "gggtopic" in topic_name
-            print(f"Created bucket: {topic_name}")
+                output_dict[output.key] = output.value
+            assert "vpc-" in output_dict["VPC"]

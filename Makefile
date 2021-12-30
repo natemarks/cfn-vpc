@@ -37,7 +37,7 @@ quick-test: ## run taskcat to smoke test stack creation
 	)
 
 lint:  ##  run cfn validate
-	aws cloudformation validate-template --template-body file://topic.json
+	aws cloudformation validate-template --template-body file://vpc.json
 
 fmt: ## run gofmt
 	@go fmt ${PKG_LIST}
