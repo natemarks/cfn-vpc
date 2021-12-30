@@ -68,4 +68,8 @@ git-status: ## require status is clean so we can use undo_edits to put things ba
 rebase: git-status ## rebase current feature branch on to the default branch
 	git fetch && git rebase origin/$(DEFAULT_BRANCH)
 
+
+shellcheck:
+	find scripts -type f -name "*.sh" -exec "shellcheck" "--format=gcc" {} \;
+	
 .PHONY: build release static  lint test
