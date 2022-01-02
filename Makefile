@@ -11,6 +11,10 @@ CDIR = $(shell pwd)
 CURRENT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 DEFAULT_BRANCH := main
 
+PUBLISH_BUCKET := natemarks-cloudformation-public
+PROJECT := cfn-vpc
+TEMPLATES := vpc.json
+
 help: ## Show this help.
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 
@@ -76,5 +80,13 @@ rebase: git-status ## rebase current feature branch on to the default branch
 
 shellcheck:
 	find scripts -type f -name "*.sh" -exec "shellcheck" "--format=gcc" {} \;
+
+
+${TEMPLATES}:
+	aws s3api put-object --bucket $(PUBLISH_BUCKET) \
+	--key $(PROJECT)/ ; \
+	aws s3 cp $@ s3://$(PUBLISH_BUCKET)/$(PROJECT)/$@ ; \
+
+publish: ${TEMPLATES} ## publish templates to public bucket
 	
-.PHONY: build release static  lint test
+.PHONY: build release static  lint test publish ${TEMPLATES}
