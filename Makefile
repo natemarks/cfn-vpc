@@ -22,12 +22,17 @@ clean-venv: ## re-create virtual env
        pip install --upgrade pip setuptools; \
     )
 
-test: ## run pytest/taskcat with assertions
+pytest-taskcat: ## run pytest/taskcat with assertions
 	( \
 	   source .venv/bin/activate; \
 	   pip install boto3 taskcat pytest; \
 	   pytest -v; \
 	)
+
+test: ## run go test
+	go mod init github.com/natemarks/cfn-vpc || true
+	go mod tidy
+	go test -v
 
 quick-test: ## run taskcat to smoke test stack creation
 	( \
