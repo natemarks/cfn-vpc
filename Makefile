@@ -4,7 +4,7 @@
 # Be sure to place this BEFORE `include` directives, if any.
 DEFAULT_BRANCH := main
 THIS_FILE := $(lastword $(MAKEFILE_LIST))
-VERSION := 0.0.0
+VERSION := 0.0.1
 COMMIT := $(shell git rev-parse HEAD)
 CDIR = $(shell pwd)
 
