@@ -1,2 +1,1 @@
-cloudformation project with taskcat example
-Aspirus, Inc. and Affiliates
+cloudformation  template to create a vpc with public (internet gateway), application (NAT gateway) and private (no internet access) subnets
