@@ -1,272 +1,1371 @@
 {
-  "AWSTemplateFormatVersion" : "2010-09-09",
-
-  "Description" : "This template creates a VPC with 3 public subnets (using internet gateway), 3 application subnets (using NAT gateways), and 3 private subnets (with no internet access). default addressing uses /24 subnets for readability. ",
-
-  "Parameters" : {
-
-    "Owner" : {
-      "Description" : "Owner name used for billing",
-      "Type" : "String",
-      "Default" : "deleteme_owner"
-    },
-
-    "Environment" : {
-      "Description" : "Unique name for a platform deployment: ex. sandbox, staging, production",
-      "Type" : "String",
-      "Default" : "delete_environment"
-    },
-
-    "Project" : {
-      "Description" : "Unique name for a set of resources that share a VPC",
-      "Type" : "String",
-      "Default" : "deleteme_project"
-    },
-
-    "Region": {
-      "Description" : "Create the VPC in this region. Only using regions with 3+ Azs",
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "This template creates a VPC with 3 public subnets (using internet gateway), 3 application subnets (using NAT gateways), and 3 private subnets (with no internet access). default addressing uses /24 subnets for readability. ",
+  "Parameters": {
+    "Owner": {
+      "Description": "Owner name used for billing",
       "Type": "String",
-      "AllowedValues" : ["us-east-1", "us-east-2", "us-west-2"],
-      "Default" : "us-east-1"
+      "Default": "deleteme_owner"
     },
-    
-    "VPCCIDRBlock" : {
-      "Description" : "CIDR Block for the Control VPC",
+    "Environment": {
+      "Description": "Unique name for a platform deployment: ex. sandbox, staging, production",
+      "Type": "String",
+      "Default": "delete_environment"
+    },
+    "Project": {
+      "Description": "Unique name for a set of resources that share a VPC",
+      "Type": "String",
+      "Default": "deleteme_project"
+    },
+    "Region": {
+      "Description": "Create the VPC in this region. Only using regions with 3+ Azs",
+      "Type": "String",
+      "AllowedValues": [
+        "us-east-1",
+        "us-east-2",
+        "us-west-2"
+      ],
+      "Default": "us-east-1"
+    },
+    "VPCCIDRBlock": {
+      "Description": "CIDR Block for the Control VPC",
       "Type": "String",
       "MinLength": "9",
       "MaxLength": "18",
       "Default": "10.222.0.0/16",
       "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
       "ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x."
+    },
+    "LatestAmiId": {
+      "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
+      "Default": "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
     }
   },
-
-  "Mappings" : {
-    "AWSRegion2AZ":{
-      "us-east-1":{
-        "0":"us-east-1a",
-        "1":"us-east-1b",
-        "2":"us-east-1c",
-        "3":"us-east-1d",
-        "4":"us-east-1e",
-        "5":"us-east-1f"
+  "Mappings": {
+    "AWSRegion2AZ": {
+      "us-east-1": {
+        "0": "us-east-1a",
+        "1": "us-east-1b",
+        "2": "us-east-1c",
+        "3": "us-east-1d",
+        "4": "us-east-1e",
+        "5": "us-east-1f"
       },
-      "us-east-2":{
-        "0":"us-east-2a",
-        "1":"us-east-2b",
-        "2":"us-east-2c"
+      "us-east-2": {
+        "0": "us-east-2a",
+        "1": "us-east-2b",
+        "2": "us-east-2c"
       },
-      "us-west-2":{
-        "0":"us-west-2a",
-        "1":"us-west-2b",
-        "2":"us-west-2c",
-        "3":"us-west-2d"
+      "us-west-2": {
+        "0": "us-west-2a",
+        "1": "us-west-2b",
+        "2": "us-west-2c",
+        "3": "us-west-2d"
       }
     }
-
   },
-
-  "Resources" : {
-
-    "VPC" : {
-      "Type" : "AWS::EC2::VPC",
-      "Properties" : {
-        "CidrBlock" : { "Ref" : "VPCCIDRBlock"},
-        "Tags" : [ 
-          {"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} },
-          {"Key" : "Project", "Value" : "control" } 
+  "Resources": {
+    "VPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": {
+          "Ref": "VPCCIDRBlock"
+        },
+        "EnableDnsSupport": true,
+        "EnableDnsHostnames": true,
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          },
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${Owner}.${Environment}.${Project}.${AWS::Region}"
+            }
+          }
         ]
       }
     },
-
-    "SubnetPublic0" : {
-      "Type" : "AWS::EC2::Subnet",
-      "Properties" : {
-        "VpcId" : { "Ref" : "VPC" },
-        "AvailabilityZone" : { "Fn::FindInMap" : [ "AWSRegion2AZ", { "Ref" : "Region" }, "0"] },
-        "CidrBlock" : { "Fn::Select" : [ 0, { "Fn::Cidr" : [{ "Fn::GetAtt" : [ "VPC", "CidrBlock" ]}, 9, 8 ]}]},
-        "Tags" : [ {"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} } ]
+    "Ec2MessagesVpcEndpoint": {
+      "Type": "AWS::EC2::VPCEndpoint",
+      "Properties": {
+        "PrivateDnsEnabled": true,
+        "VpcEndpointType": "Interface",
+        "ServiceName": {
+          "Fn::Sub": "com.amazonaws.${AWS::Region}.ec2messages"
+        },
+        "SubnetIds": [
+          {
+            "Ref": "SubnetPrivate0"
+          },
+          {
+            "Ref": "SubnetPrivate1"
+          },
+          {
+            "Ref": "SubnetPrivate2"
+          }
+        ],
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "SecurityGroupIds": [
+          {
+            "Ref": "VpcEndpointSecurityGroup"
+          }
+        ]
       }
     },
-
-    "SubnetPublic1" : {
-      "Type" : "AWS::EC2::Subnet",
-      "Properties" : {
-        "VpcId" : { "Ref" : "VPC" },
-        "AvailabilityZone" : { "Fn::FindInMap" : [ "AWSRegion2AZ", { "Ref" : "Region" }, "1"] },
-        "CidrBlock" : { "Fn::Select" : [ 1, { "Fn::Cidr" : [{ "Fn::GetAtt" : [ "VPC", "CidrBlock" ]}, 9, 8 ]}]},
-        "Tags" : [ {"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} } ]
+    "SsmMessagesVpcEndpoint": {
+      "Type": "AWS::EC2::VPCEndpoint",
+      "Properties": {
+        "PrivateDnsEnabled": true,
+        "VpcEndpointType": "Interface",
+        "ServiceName": {
+          "Fn::Sub": "com.amazonaws.${AWS::Region}.ssmmessages"
+        },
+        "SubnetIds": [
+          {
+            "Ref": "SubnetPrivate0"
+          },
+          {
+            "Ref": "SubnetPrivate1"
+          },
+          {
+            "Ref": "SubnetPrivate2"
+          }
+        ],
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "SecurityGroupIds": [
+          {
+            "Ref": "VpcEndpointSecurityGroup"
+          }
+        ]
       }
     },
-
-    "SubnetPublic2" : {
-      "Type" : "AWS::EC2::Subnet",
-      "Properties" : {
-        "VpcId" : { "Ref" : "VPC" },
-        "AvailabilityZone" : { "Fn::FindInMap" : [ "AWSRegion2AZ", { "Ref" : "Region" }, "2"] },
-        "CidrBlock" : { "Fn::Select" : [ 2, { "Fn::Cidr" : [{ "Fn::GetAtt" : [ "VPC", "CidrBlock" ]}, 9, 8 ]}]},
-        "Tags" : [ {"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} } ]
+    "SsmVpcEndpoint": {
+      "Type": "AWS::EC2::VPCEndpoint",
+      "Properties": {
+        "PrivateDnsEnabled": true,
+        "VpcEndpointType": "Interface",
+        "ServiceName": {
+          "Fn::Sub": "com.amazonaws.${AWS::Region}.ssm"
+        },
+        "SubnetIds": [
+          {
+            "Ref": "SubnetPrivate0"
+          },
+          {
+            "Ref": "SubnetPrivate1"
+          },
+          {
+            "Ref": "SubnetPrivate2"
+          }
+        ],
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "SecurityGroupIds": [
+          {
+            "Ref": "VpcEndpointSecurityGroup"
+          }
+        ]
       }
     },
-
-    "SubnetApp0" : {
-      "Type" : "AWS::EC2::Subnet",
-      "Properties" : {
-        "VpcId" : { "Ref" : "VPC" },
-        "AvailabilityZone" : { "Fn::FindInMap" : [ "AWSRegion2AZ", { "Ref" : "Region" }, "1"] },
-        "CidrBlock" : { "Fn::Select" : [ 3, { "Fn::Cidr" : [{ "Fn::GetAtt" : [ "VPC", "CidrBlock" ]}, 9, 8 ]}]},
-        "Tags" : [ {"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} } ]
+    "SubnetPublic0": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "AvailabilityZone": {
+          "Fn::FindInMap": [
+            "AWSRegion2AZ",
+            {
+              "Ref": "Region"
+            },
+            "0"
+          ]
+        },
+        "CidrBlock": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::Cidr": [
+                {
+                  "Fn::GetAtt": [
+                    "VPC",
+                    "CidrBlock"
+                  ]
+                },
+                9,
+                8
+              ]
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
       }
     },
-
-    "SubnetApp1" : {
-      "Type" : "AWS::EC2::Subnet",
-      "Properties" : {
-        "VpcId" : { "Ref" : "VPC" },
-        "AvailabilityZone" : { "Fn::FindInMap" : [ "AWSRegion2AZ", { "Ref" : "Region" }, "2"] },
-        "CidrBlock" : { "Fn::Select" : [ 4, { "Fn::Cidr" : [{ "Fn::GetAtt" : [ "VPC", "CidrBlock" ]}, 9, 8 ]}]},
-        "Tags" : [ {"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} } ]
+    "SubnetPublic1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "AvailabilityZone": {
+          "Fn::FindInMap": [
+            "AWSRegion2AZ",
+            {
+              "Ref": "Region"
+            },
+            "1"
+          ]
+        },
+        "CidrBlock": {
+          "Fn::Select": [
+            1,
+            {
+              "Fn::Cidr": [
+                {
+                  "Fn::GetAtt": [
+                    "VPC",
+                    "CidrBlock"
+                  ]
+                },
+                9,
+                8
+              ]
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
       }
     },
-
-    "SubnetApp2" : {
-      "Type" : "AWS::EC2::Subnet",
-      "Properties" : {
-        "VpcId" : { "Ref" : "VPC" },
-        "AvailabilityZone" : { "Fn::FindInMap" : [ "AWSRegion2AZ", { "Ref" : "Region" }, "0"] },
-        "CidrBlock" : { "Fn::Select" : [ 5, { "Fn::Cidr" : [{ "Fn::GetAtt" : [ "VPC", "CidrBlock" ]}, 9, 8 ]}]},
-        "Tags" : [ {"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} } ]
+    "SubnetPublic2": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "AvailabilityZone": {
+          "Fn::FindInMap": [
+            "AWSRegion2AZ",
+            {
+              "Ref": "Region"
+            },
+            "2"
+          ]
+        },
+        "CidrBlock": {
+          "Fn::Select": [
+            2,
+            {
+              "Fn::Cidr": [
+                {
+                  "Fn::GetAtt": [
+                    "VPC",
+                    "CidrBlock"
+                  ]
+                },
+                9,
+                8
+              ]
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
       }
     },
-
-    "SubnetPrivate0" : {
-      "Type" : "AWS::EC2::Subnet",
-      "Properties" : {
-        "VpcId" : { "Ref" : "VPC" },
-        "AvailabilityZone" : { "Fn::FindInMap" : [ "AWSRegion2AZ", { "Ref" : "Region" }, "2"] },
-        "CidrBlock" : { "Fn::Select" : [ 6, { "Fn::Cidr" : [{ "Fn::GetAtt" : [ "VPC", "CidrBlock" ]}, 9, 8 ]}]},
-        "Tags" : [ {"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} } ]
+    "SubnetApp0": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "AvailabilityZone": {
+          "Fn::FindInMap": [
+            "AWSRegion2AZ",
+            {
+              "Ref": "Region"
+            },
+            "0"
+          ]
+        },
+        "CidrBlock": {
+          "Fn::Select": [
+            3,
+            {
+              "Fn::Cidr": [
+                {
+                  "Fn::GetAtt": [
+                    "VPC",
+                    "CidrBlock"
+                  ]
+                },
+                9,
+                8
+              ]
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
       }
     },
-
-    "SubnetPrivate1" : {
-      "Type" : "AWS::EC2::Subnet",
-      "Properties" : {
-        "VpcId" : { "Ref" : "VPC" },
-        "AvailabilityZone" : { "Fn::FindInMap" : [ "AWSRegion2AZ", { "Ref" : "Region" }, "0"] },
-        "CidrBlock" : { "Fn::Select" : [ 7, { "Fn::Cidr" : [{ "Fn::GetAtt" : [ "VPC", "CidrBlock" ]}, 9, 8 ]}]},
-        "Tags" : [ {"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} } ]
+    "SubnetApp1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "AvailabilityZone": {
+          "Fn::FindInMap": [
+            "AWSRegion2AZ",
+            {
+              "Ref": "Region"
+            },
+            "1"
+          ]
+        },
+        "CidrBlock": {
+          "Fn::Select": [
+            4,
+            {
+              "Fn::Cidr": [
+                {
+                  "Fn::GetAtt": [
+                    "VPC",
+                    "CidrBlock"
+                  ]
+                },
+                9,
+                8
+              ]
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
       }
     },
-
-    "SubnetPrivate2" : {
-      "Type" : "AWS::EC2::Subnet",
-      "Properties" : {
-        "VpcId" : { "Ref" : "VPC" },
-        "AvailabilityZone" : { "Fn::FindInMap" : [ "AWSRegion2AZ", { "Ref" : "Region" }, "1"] },
-        "CidrBlock" : { "Fn::Select" : [ 8, { "Fn::Cidr" : [{ "Fn::GetAtt" : [ "VPC", "CidrBlock" ]}, 9, 8 ]}]},
-        "Tags" : [ {"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} } ]
+    "SubnetApp2": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "AvailabilityZone": {
+          "Fn::FindInMap": [
+            "AWSRegion2AZ",
+            {
+              "Ref": "Region"
+            },
+            "2"
+          ]
+        },
+        "CidrBlock": {
+          "Fn::Select": [
+            5,
+            {
+              "Fn::Cidr": [
+                {
+                  "Fn::GetAtt": [
+                    "VPC",
+                    "CidrBlock"
+                  ]
+                },
+                9,
+                8
+              ]
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
       }
     },
-
-    "InternetGateway" : {
-      "Type" : "AWS::EC2::InternetGateway",
-      "Properties" : {
-        "Tags" : [ {"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} } ]
+    "SubnetPrivate0": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "AvailabilityZone": {
+          "Fn::FindInMap": [
+            "AWSRegion2AZ",
+            {
+              "Ref": "Region"
+            },
+            "0"
+          ]
+        },
+        "CidrBlock": {
+          "Fn::Select": [
+            6,
+            {
+              "Fn::Cidr": [
+                {
+                  "Fn::GetAtt": [
+                    "VPC",
+                    "CidrBlock"
+                  ]
+                },
+                9,
+                8
+              ]
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
       }
     },
-
-    "AttachGateway" : {
-       "Type" : "AWS::EC2::VPCGatewayAttachment",
-       "Properties" : {
-         "VpcId" : { "Ref" : "VPC" },
-         "InternetGatewayId" : { "Ref" : "InternetGateway" }
-       }
-    },
-
-    "PublicRouteTable" : {
-      "Type" : "AWS::EC2::RouteTable",
-      "Properties" : {
-        "VpcId" : {"Ref" : "VPC"},
-        "Tags" : [ {"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} } ]
+    "SubnetPrivate1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "AvailabilityZone": {
+          "Fn::FindInMap": [
+            "AWSRegion2AZ",
+            {
+              "Ref": "Region"
+            },
+            "1"
+          ]
+        },
+        "CidrBlock": {
+          "Fn::Select": [
+            7,
+            {
+              "Fn::Cidr": [
+                {
+                  "Fn::GetAtt": [
+                    "VPC",
+                    "CidrBlock"
+                  ]
+                },
+                9,
+                8
+              ]
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
       }
     },
-
-    "PublicRoute" : {
-      "Type" : "AWS::EC2::Route",
-      "DependsOn" : "AttachGateway",
-      "Properties" : {
-        "RouteTableId" : { "Ref" : "PublicRouteTable" },
-        "DestinationCidrBlock" : "0.0.0.0/0",
-        "GatewayId" : { "Ref" : "InternetGateway" }
+    "SubnetPrivate2": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "AvailabilityZone": {
+          "Fn::FindInMap": [
+            "AWSRegion2AZ",
+            {
+              "Ref": "Region"
+            },
+            "2"
+          ]
+        },
+        "CidrBlock": {
+          "Fn::Select": [
+            8,
+            {
+              "Fn::Cidr": [
+                {
+                  "Fn::GetAtt": [
+                    "VPC",
+                    "CidrBlock"
+                  ]
+                },
+                9,
+                8
+              ]
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
       }
     },
-
-    "Public0SRTA" : {
-      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
-      "Properties" : {
-        "SubnetId" : { "Ref" : "SubnetPublic0" },
-        "RouteTableId" : { "Ref" : "PublicRouteTable" }
+    "InternetGateway": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
       }
     },
-
-    "Public1SRTA" : {
-      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
-      "Properties" : {
-        "SubnetId" : { "Ref" : "SubnetPublic1" },
-        "RouteTableId" : { "Ref" : "PublicRouteTable" }
+    "AttachGateway": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "InternetGatewayId": {
+          "Ref": "InternetGateway"
+        }
       }
     },
-
-    "Public2SRTA" : {
-      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
-      "Properties" : {
-        "SubnetId" : { "Ref" : "SubnetPublic2" },
-        "RouteTableId" : { "Ref" : "PublicRouteTable" }
+    "PublicRouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "PublicRoute": {
+      "Type": "AWS::EC2::Route",
+      "DependsOn": "AttachGateway",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "PublicRouteTable"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "InternetGateway"
+        }
+      }
+    },
+    "Public0SRTA": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "SubnetPublic0"
+        },
+        "RouteTableId": {
+          "Ref": "PublicRouteTable"
+        }
+      }
+    },
+    "Public1SRTA": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "SubnetPublic1"
+        },
+        "RouteTableId": {
+          "Ref": "PublicRouteTable"
+        }
+      }
+    },
+    "Public2SRTA": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "SubnetPublic2"
+        },
+        "RouteTableId": {
+          "Ref": "PublicRouteTable"
+        }
+      }
+    },
+    "App0SRTA": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "SubnetApp0"
+        },
+        "RouteTableId": {
+          "Ref": "App0RouteTable"
+        }
+      }
+    },
+    "App1SRTA": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "SubnetApp1"
+        },
+        "RouteTableId": {
+          "Ref": "App1RouteTable"
+        }
+      }
+    },
+    "App2SRTA": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "SubnetApp2"
+        },
+        "RouteTableId": {
+          "Ref": "App2RouteTable"
+        }
+      }
+    },
+    "App0NatGatewayEIP": {
+      "Type": "AWS::EC2::EIP",
+      "DependsOn": "AttachGateway",
+      "Properties": {
+        "Domain": "vpc",
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "App0NatGateway": {
+      "Type": "AWS::EC2::NatGateway",
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "App0NatGatewayEIP",
+            "AllocationId"
+          ]
+        },
+        "SubnetId": {
+          "Ref": "SubnetPublic0"
+        },
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "App0RouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "App0DefaultRoute": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "NatGatewayId": {
+          "Ref": "App0NatGateway"
+        },
+        "RouteTableId": {
+          "Ref": "App0RouteTable"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0"
+      }
+    },
+    "App1NatGatewayEIP": {
+      "Type": "AWS::EC2::EIP",
+      "DependsOn": "AttachGateway",
+      "Properties": {
+        "Domain": "vpc",
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "App1NatGateway": {
+      "Type": "AWS::EC2::NatGateway",
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "App1NatGatewayEIP",
+            "AllocationId"
+          ]
+        },
+        "SubnetId": {
+          "Ref": "SubnetPublic1"
+        },
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "App1RouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "App1DefaultRoute": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "NatGatewayId": {
+          "Ref": "App1NatGateway"
+        },
+        "RouteTableId": {
+          "Ref": "App1RouteTable"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0"
+      }
+    },
+    "App2NatGatewayEIP": {
+      "Type": "AWS::EC2::EIP",
+      "DependsOn": "AttachGateway",
+      "Properties": {
+        "Domain": "vpc",
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "App2NatGateway": {
+      "Type": "AWS::EC2::NatGateway",
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "App2NatGatewayEIP",
+            "AllocationId"
+          ]
+        },
+        "SubnetId": {
+          "Ref": "SubnetPublic2"
+        },
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "App2RouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "App2DefaultRoute": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "NatGatewayId": {
+          "Ref": "App2NatGateway"
+        },
+        "RouteTableId": {
+          "Ref": "App2RouteTable"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0"
+      }
+    },
+    "VpcInstanceSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Applied to all instances in the VPC",
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "GroupName": "VpcInstanceSecurityGroup",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "On Instance:Permit access to All VPC IPs via tcp/443. required for vpc endpoint access",
+            "FromPort": 443,
+            "ToPort": 443,
+            "IpProtocol": "tcp"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "VpcEndpointSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Applied to all VPC Endpoints in the VPC",
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "GroupName": "VpcEndpointSecurityGroup",
+        "SecurityGroupIngress": [
+          {
+            "Description": "On VPC Endpoint: allow inbound HTTPS from the EC2 instance",
+            "SourceSecurityGroupId": {
+              "Ref": "VpcInstanceSecurityGroup"
+            },
+            "FromPort": 443,
+            "ToPort": 443,
+            "IpProtocol": "tcp"
+          }
+        ],
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": {
+              "Ref": "VPCCIDRBlock"
+            },
+            "Description": "On VPC Endpoint :Allow outbound HTTPS to the VPC",
+            "FromPort": 443,
+            "ToPort": 443,
+            "IpProtocol": "tcp"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
       }
     }
   },
-
-  "Outputs" : {
-    "VPC" : {
-      "Value" : { "Ref" : "VPC" },
-      "Description" : "VPC Id"
+  "Outputs": {
+    "VPCID": {
+      "Value": {
+        "Ref": "VPC"
+      },
+      "Description": "VPC Id",
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-VPCID"
+        }
+      }
     },
-    "SubnetPublic0" : {
-      "Value" : { "Ref" : "SubnetPublic0" },
-      "Description" : "The subnet ID for SubnetPublic0"
+    "SubnetPublic0": {
+      "Value": {
+        "Ref": "SubnetPublic0"
+      },
+      "Description": "The subnet ID for SubnetPublic0",
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-SubnetPublic0"
+        }
+      }
     },
-    "SubnetPublic1" : {
-      "Value" : { "Ref" : "SubnetPublic1" },
-      "Description" : "The subnet ID for SubnetPublic1"
+    "SubnetPublic1": {
+      "Value": {
+        "Ref": "SubnetPublic1"
+      },
+      "Description": "The subnet ID for SubnetPublic1",
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-SubnetPublic1"
+        }
+      }
     },
-    "SubnetPublic2" : {
-      "Value" : { "Ref" : "SubnetPublic2" },
-      "Description" : "The subnet ID for SubnetPublic2"
+    "SubnetPublic2": {
+      "Value": {
+        "Ref": "SubnetPublic2"
+      },
+      "Description": "The subnet ID for SubnetPublic2",
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-SubnetPublic2"
+        }
+      }
     },
-    "SubnetApp0" : {
-      "Value" : { "Ref" : "SubnetApp0" },
-      "Description" : "The subnet ID for SubnetApp0"
+    "SubnetApp0": {
+      "Value": {
+        "Ref": "SubnetApp0"
+      },
+      "Description": "The subnet ID for SubnetApp0",
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-SubnetApp0"
+        }
+      }
     },
-    "SubnetApp1" : {
-      "Value" : { "Ref" : "SubnetApp1" },
-      "Description" : "The subnet ID for SubnetApp1"
+    "SubnetApp1": {
+      "Value": {
+        "Ref": "SubnetApp1"
+      },
+      "Description": "The subnet ID for SubnetApp1",
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-SubnetApp1"
+        }
+      }
     },
-    "SubnetApp2" : {
-      "Value" : { "Ref" : "SubnetApp2" },
-      "Description" : "The subnet ID for SubnetApp2"
+    "SubnetApp2": {
+      "Value": {
+        "Ref": "SubnetApp2"
+      },
+      "Description": "The subnet ID for SubnetApp2",
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-SubnetApp2"
+        }
+      }
     },
-    "SubnetPrivate0" : {
-      "Value" : { "Ref" : "SubnetPrivate0" },
-      "Description" : "The subnet ID for SubnetPrivate0"
+    "SubnetPrivate0": {
+      "Value": {
+        "Ref": "SubnetPrivate0"
+      },
+      "Description": "The subnet ID for SubnetPrivate0",
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-SubnetPrivate0"
+        }
+      }
     },
-    "SubnetPrivate1" : {
-      "Value" : { "Ref" : "SubnetPrivate1" },
-      "Description" : "The subnet ID for SubnetPrivate1"
+    "SubnetPrivate1": {
+      "Value": {
+        "Ref": "SubnetPrivate1"
+      },
+      "Description": "The subnet ID for SubnetPrivate1",
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-SubnetPrivate1"
+        }
+      }
     },
-    "SubnetPrivate2" : {
-      "Value" : { "Ref" : "SubnetPrivate2" },
-      "Description" : "The subnet ID for SubnetPrivate2"
+    "SubnetPrivate2": {
+      "Value": {
+        "Ref": "SubnetPrivate2"
+      },
+      "Description": "The subnet ID for SubnetPrivate2",
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-SubnetPrivate2"
+        }
+      }
+    },
+    "Ec2MessagesVpcEndpoint": {
+      "Value": {
+        "Ref": "Ec2MessagesVpcEndpoint"
+      },
+      "Description": "The Ec2MessagesVpcEndpoint ID",
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-Ec2MessagesVpcEndpoint"
+        }
+      }
+    },
+    "SsmMessagesVpcEndpoint": {
+      "Value": {
+        "Ref": "SsmMessagesVpcEndpoint"
+      },
+      "Description": "The SsmMessagesVpcEndpoint ID",
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-SsmMessagesVpcEndpoint"
+        }
+      }
+    },
+    "SsmVpcEndpoint": {
+      "Value": {
+        "Ref": "SsmVpcEndpoint"
+      },
+      "Description": "The SsmVpcEndpoint ID",
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-SsmVpcEndpoint"
+        }
+      }
+    },
+    "VpcInstanceSecurityGroup": {
+      "Value": {
+        "Ref": "VpcInstanceSecurityGroup"
+      },
+      "Description": "The VpcInstanceSecurityGroup ID",
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-VpcInstanceSecurityGroup"
+        }
+      }
     }
   }
 }

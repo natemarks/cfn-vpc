@@ -1,0 +1,1579 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "This stack is created to test an existing instance of the vpc stack. It creates resources required to test the vpc stack functionality",
+  "Parameters": {
+    "VpcStackName": {
+      "Description": "Name of an existing vpc stack to test",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "Default": "deleteme-cfn-vpc-test"
+    },
+    "Owner": {
+      "Description": "Owner name used for billing",
+      "Type": "String",
+      "Default": "deleteme_owner"
+    },
+    "Environment": {
+      "Description": "Unique name for a platform deployment: ex. sandbox, staging, production",
+      "Type": "String",
+      "Default": "delete_environment"
+    },
+    "Project": {
+      "Description": "Unique name for a set of resources that share a VPC",
+      "Type": "String",
+      "Default": "deleteme_project"
+    },
+    "Region": {
+      "Description": "Create the VPC in this region. Only using regions with 3+ Azs",
+      "Type": "String",
+      "AllowedValues": [
+        "us-east-1",
+        "us-east-2",
+        "us-west-2"
+      ],
+      "Default": "us-east-1"
+    },
+    "VPCCIDRBlock": {
+      "Description": "CIDR Block for the Control VPC",
+      "Type": "String",
+      "MinLength": "9",
+      "MaxLength": "18",
+      "Default": "10.222.0.0/16",
+      "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+      "ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x."
+    },
+    "LatestAmiId": {
+      "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
+      "Default": "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+    }
+  },
+  "Mappings": {
+    "AWSRegion2AZ": {
+      "us-east-1": {
+        "0": "us-east-1a",
+        "1": "us-east-1b",
+        "2": "us-east-1c",
+        "3": "us-east-1d",
+        "4": "us-east-1e",
+        "5": "us-east-1f"
+      },
+      "us-east-2": {
+        "0": "us-east-2a",
+        "1": "us-east-2b",
+        "2": "us-east-2c"
+      },
+      "us-west-2": {
+        "0": "us-west-2a",
+        "1": "us-west-2b",
+        "2": "us-west-2c",
+        "3": "us-west-2d"
+      }
+    }
+  },
+  "Resources": {
+    "AppTestInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "InstanceProfileName": {
+          "Fn::Sub": "${Owner}.${Environment}.${Project}.${AWS::Region}"
+        },
+        "Path": "/",
+        "Roles": [
+          {
+            "Ref": "AppTestInstanceRole"
+          }
+        ]
+      }
+    },
+    "AppTestInstanceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Description": "sfgdfg",
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore"
+          }
+        ],
+        "Path": "/",
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "App0TestInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "IamInstanceProfile": {
+          "Ref": "AppTestInstanceProfile"
+        },
+        "ImageId": {
+          "Ref": "LatestAmiId"
+        },
+        "InstanceType": "t2.micro",
+        "SubnetId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-SubnetApp0"
+          }
+        },
+        "SecurityGroupIds": [
+          {
+            "Fn::ImportValue": {
+              "Fn::Sub": "${VpcStackName}-VpcInstanceSecurityGroup"
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "App1TestInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "IamInstanceProfile": {
+          "Ref": "AppTestInstanceProfile"
+        },
+        "ImageId": {
+          "Ref": "LatestAmiId"
+        },
+        "InstanceType": "t2.micro",
+        "SubnetId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-SubnetApp1"
+          }
+        },
+        "SecurityGroupIds": [
+          {
+            "Fn::ImportValue": {
+              "Fn::Sub": "${VpcStackName}-VpcInstanceSecurityGroup"
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "App2TestInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "IamInstanceProfile": {
+          "Ref": "AppTestInstanceProfile"
+        },
+        "ImageId": {
+          "Ref": "LatestAmiId"
+        },
+        "InstanceType": "t2.micro",
+        "SubnetId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-SubnetApp2"
+          }
+        },
+        "SecurityGroupIds": [
+          {
+            "Fn::ImportValue": {
+              "Fn::Sub": "${VpcStackName}-VpcInstanceSecurityGroup"
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIPFromApp0TestInstancetoSsmVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsPath",
+      "Properties": {
+        "Destination": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-SsmVpcEndpoint"
+          }
+        },
+        "DestinationPort": 443,
+        "Protocol": "tcp",
+        "Source": {
+          "Ref": "App0TestInstance"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "App0Ec2ToSsmEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIAFromApp0TestInstancetoSsmVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsAnalysis",
+      "Properties": {
+        "NetworkInsightsPathId": {
+          "Ref": "NIPFromApp0TestInstancetoSsmVPCE"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "App2Ec2ToSsmEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIPFromApp1TestInstancetoSsmVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsPath",
+      "Properties": {
+        "Destination": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-SsmVpcEndpoint"
+          }
+        },
+        "DestinationPort": 443,
+        "Protocol": "tcp",
+        "Source": {
+          "Ref": "App1TestInstance"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "App1Ec2ToSsmEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIAFromApp1TestInstancetoSsmVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsAnalysis",
+      "Properties": {
+        "NetworkInsightsPathId": {
+          "Ref": "NIPFromApp1TestInstancetoSsmVPCE"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "App1Ec2ToSsmEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIPFromApp2TestInstancetoSsmVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsPath",
+      "Properties": {
+        "Destination": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-SsmVpcEndpoint"
+          }
+        },
+        "DestinationPort": 443,
+        "Protocol": "tcp",
+        "Source": {
+          "Ref": "App2TestInstance"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "App2Ec2ToSsmEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIAFromApp2TestInstancetoSsmVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsAnalysis",
+      "Properties": {
+        "NetworkInsightsPathId": {
+          "Ref": "NIPFromApp2TestInstancetoSsmVPCE"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "App2Ec2ToSsmEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIPFromApp0TestInstancetoSsmMessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsPath",
+      "Properties": {
+        "Destination": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-SsmMessagesVpcEndpoint"
+          }
+        },
+        "DestinationPort": 443,
+        "Protocol": "tcp",
+        "Source": {
+          "Ref": "App0TestInstance"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "App0Ec2ToSsmMessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIAFromApp0TestInstancetoSsmMessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsAnalysis",
+      "Properties": {
+        "NetworkInsightsPathId": {
+          "Ref": "NIPFromApp0TestInstancetoSsmMessagesVPCE"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "App2Ec2ToSsmMessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIPFromApp1TestInstancetoSsmMessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsPath",
+      "Properties": {
+        "Destination": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-SsmMessagesVpcEndpoint"
+          }
+        },
+        "DestinationPort": 443,
+        "Protocol": "tcp",
+        "Source": {
+          "Ref": "App1TestInstance"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "App1Ec2ToSsmMessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIAFromApp1TestInstancetoSsmMessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsAnalysis",
+      "Properties": {
+        "NetworkInsightsPathId": {
+          "Ref": "NIPFromApp1TestInstancetoSsmMessagesVPCE"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "App1Ec2ToSsmMessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIPFromApp2TestInstancetoSsmMessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsPath",
+      "Properties": {
+        "Destination": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-SsmMessagesVpcEndpoint"
+          }
+        },
+        "DestinationPort": 443,
+        "Protocol": "tcp",
+        "Source": {
+          "Ref": "App2TestInstance"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "App2Ec2ToSsmMessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIAFromApp2TestInstancetoSsmMessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsAnalysis",
+      "Properties": {
+        "NetworkInsightsPathId": {
+          "Ref": "NIPFromApp2TestInstancetoSsmMessagesVPCE"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "App2Ec2ToSsmMessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIPFromApp0TestInstancetoEc2MessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsPath",
+      "Properties": {
+        "Destination": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-Ec2MessagesVpcEndpoint"
+          }
+        },
+        "DestinationPort": 443,
+        "Protocol": "tcp",
+        "Source": {
+          "Ref": "App0TestInstance"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "App0Ec2ToEc2MessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIAFromApp0TestInstancetoEc2MessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsAnalysis",
+      "Properties": {
+        "NetworkInsightsPathId": {
+          "Ref": "NIPFromApp0TestInstancetoEc2MessagesVPCE"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "App2Ec2ToEc2MessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIPFromApp1TestInstancetoEc2MessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsPath",
+      "Properties": {
+        "Destination": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-Ec2MessagesVpcEndpoint"
+          }
+        },
+        "DestinationPort": 443,
+        "Protocol": "tcp",
+        "Source": {
+          "Ref": "App1TestInstance"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "App1Ec2ToEc2MessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIAFromApp1TestInstancetoEc2MessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsAnalysis",
+      "Properties": {
+        "NetworkInsightsPathId": {
+          "Ref": "NIPFromApp1TestInstancetoEc2MessagesVPCE"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "App1Ec2ToEc2MessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIPFromApp2TestInstancetoEc2MessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsPath",
+      "Properties": {
+        "Destination": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-Ec2MessagesVpcEndpoint"
+          }
+        },
+        "DestinationPort": 443,
+        "Protocol": "tcp",
+        "Source": {
+          "Ref": "App2TestInstance"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "App2Ec2ToEc2MessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIAFromApp2TestInstancetoEc2MessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsAnalysis",
+      "Properties": {
+        "NetworkInsightsPathId": {
+          "Ref": "NIPFromApp2TestInstancetoEc2MessagesVPCE"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "App2Ec2ToEc2MessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "SGPermitPublicInboundHttp": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Appended  to the public test instances SG list to permit http form anywhere for testing ",
+        "VpcId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-VPCID"
+          }
+        },
+        "GroupName": "SGPermitPublicInboundHttp",
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "On Instance:Permit access to All VPC IPs via tcp/80. required for vpc endpoint access",
+            "FromPort": 80,
+            "ToPort": 80,
+            "IpProtocol": "tcp"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "Public0TestInstance": {
+      "Type": "AWS::EC2::Instance",
+      "DependsOn": [
+        "SGPermitPublicInboundHttp"
+      ],
+      "Properties": {
+        "IamInstanceProfile": {
+          "Ref": "AppTestInstanceProfile"
+        },
+        "ImageId": {
+          "Ref": "LatestAmiId"
+        },
+        "NetworkInterfaces": [
+          {
+            "AssociatePublicIpAddress": "true",
+            "DeviceIndex": "0",
+            "GroupSet": [
+              {
+                "Fn::ImportValue": {
+                  "Fn::Sub": "${VpcStackName}-VpcInstanceSecurityGroup"
+                }
+              },
+              {
+                "Ref": "SGPermitPublicInboundHttp"
+              }
+            ],
+            "SubnetId": {
+              "Fn::ImportValue": {
+                "Fn::Sub": "${VpcStackName}-SubnetPublic0"
+              }
+            }
+          }
+        ],
+        "InstanceType": "t2.micro",
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "Public1TestInstance": {
+      "Type": "AWS::EC2::Instance",
+      "DependsOn": [
+        "SGPermitPublicInboundHttp"
+      ],
+      "Properties": {
+        "IamInstanceProfile": {
+          "Ref": "AppTestInstanceProfile"
+        },
+        "ImageId": {
+          "Ref": "LatestAmiId"
+        },
+        "NetworkInterfaces": [
+          {
+            "AssociatePublicIpAddress": "true",
+            "DeviceIndex": "0",
+            "GroupSet": [
+              {
+                "Fn::ImportValue": {
+                  "Fn::Sub": "${VpcStackName}-VpcInstanceSecurityGroup"
+                }
+              },
+              {
+                "Ref": "SGPermitPublicInboundHttp"
+              }
+            ],
+            "SubnetId": {
+              "Fn::ImportValue": {
+                "Fn::Sub": "${VpcStackName}-SubnetPublic1"
+              }
+            }
+          }
+        ],
+        "InstanceType": "t2.micro",
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "Public2TestInstance": {
+      "Type": "AWS::EC2::Instance",
+      "DependsOn": [
+        "SGPermitPublicInboundHttp"
+      ],
+      "Properties": {
+        "IamInstanceProfile": {
+          "Ref": "AppTestInstanceProfile"
+        },
+        "ImageId": {
+          "Ref": "LatestAmiId"
+        },
+        "NetworkInterfaces": [
+          {
+            "AssociatePublicIpAddress": "true",
+            "DeviceIndex": "0",
+            "GroupSet": [
+              {
+                "Fn::ImportValue": {
+                  "Fn::Sub": "${VpcStackName}-VpcInstanceSecurityGroup"
+                }
+              },
+              {
+                "Ref": "SGPermitPublicInboundHttp"
+              }
+            ],
+            "SubnetId": {
+              "Fn::ImportValue": {
+                "Fn::Sub": "${VpcStackName}-SubnetPublic2"
+              }
+            }
+          }
+        ],
+        "InstanceType": "t2.micro",
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIPPromPublic0TestInstancetoSsmVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsPath",
+      "Properties": {
+        "Destination": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-SsmVpcEndpoint"
+          }
+        },
+        "DestinationPort": 443,
+        "Protocol": "tcp",
+        "Source": {
+          "Ref": "Public0TestInstance"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Public0Ec2ToSsmEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIAPromPublic0TestInstancetoSsmVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsAnalysis",
+      "Properties": {
+        "NetworkInsightsPathId": {
+          "Ref": "NIPPromPublic0TestInstancetoSsmVPCE"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Public2Ec2ToSsmEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIPPromPublic1TestInstancetoSsmVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsPath",
+      "Properties": {
+        "Destination": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-SsmVpcEndpoint"
+          }
+        },
+        "DestinationPort": 443,
+        "Protocol": "tcp",
+        "Source": {
+          "Ref": "Public1TestInstance"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Public1Ec2ToSsmEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIAPromPublic1TestInstancetoSsmVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsAnalysis",
+      "Properties": {
+        "NetworkInsightsPathId": {
+          "Ref": "NIPPromPublic1TestInstancetoSsmVPCE"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Public1Ec2ToSsmEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIPPromPublic2TestInstancetoSsmVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsPath",
+      "Properties": {
+        "Destination": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-SsmVpcEndpoint"
+          }
+        },
+        "DestinationPort": 443,
+        "Protocol": "tcp",
+        "Source": {
+          "Ref": "Public2TestInstance"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Public2Ec2ToSsmEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIAPromPublic2TestInstancetoSsmVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsAnalysis",
+      "Properties": {
+        "NetworkInsightsPathId": {
+          "Ref": "NIPPromPublic2TestInstancetoSsmVPCE"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Public2Ec2ToSsmEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIPPromPublic0TestInstancetoSsmMessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsPath",
+      "Properties": {
+        "Destination": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-SsmMessagesVpcEndpoint"
+          }
+        },
+        "DestinationPort": 443,
+        "Protocol": "tcp",
+        "Source": {
+          "Ref": "Public0TestInstance"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Public0Ec2ToSsmMessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIAPromPublic0TestInstancetoSsmMessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsAnalysis",
+      "Properties": {
+        "NetworkInsightsPathId": {
+          "Ref": "NIPPromPublic0TestInstancetoSsmMessagesVPCE"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Public2Ec2ToSsmMessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIPPromPublic1TestInstancetoSsmMessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsPath",
+      "Properties": {
+        "Destination": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-SsmMessagesVpcEndpoint"
+          }
+        },
+        "DestinationPort": 443,
+        "Protocol": "tcp",
+        "Source": {
+          "Ref": "Public1TestInstance"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Public1Ec2ToSsmMessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIAPromPublic1TestInstancetoSsmMessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsAnalysis",
+      "Properties": {
+        "NetworkInsightsPathId": {
+          "Ref": "NIPPromPublic1TestInstancetoSsmMessagesVPCE"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Public1Ec2ToSsmMessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIPPromPublic2TestInstancetoSsmMessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsPath",
+      "Properties": {
+        "Destination": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-SsmMessagesVpcEndpoint"
+          }
+        },
+        "DestinationPort": 443,
+        "Protocol": "tcp",
+        "Source": {
+          "Ref": "Public2TestInstance"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Public2Ec2ToSsmMessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIAPromPublic2TestInstancetoSsmMessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsAnalysis",
+      "Properties": {
+        "NetworkInsightsPathId": {
+          "Ref": "NIPPromPublic2TestInstancetoSsmMessagesVPCE"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Public2Ec2ToSsmMessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIPPromPublic0TestInstancetoEc2MessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsPath",
+      "Properties": {
+        "Destination": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-Ec2MessagesVpcEndpoint"
+          }
+        },
+        "DestinationPort": 443,
+        "Protocol": "tcp",
+        "Source": {
+          "Ref": "Public0TestInstance"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Public0Ec2ToEc2MessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIAPromPublic0TestInstancetoEc2MessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsAnalysis",
+      "Properties": {
+        "NetworkInsightsPathId": {
+          "Ref": "NIPPromPublic0TestInstancetoEc2MessagesVPCE"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Public2Ec2ToEc2MessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIPPromPublic1TestInstancetoEc2MessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsPath",
+      "Properties": {
+        "Destination": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-Ec2MessagesVpcEndpoint"
+          }
+        },
+        "DestinationPort": 443,
+        "Protocol": "tcp",
+        "Source": {
+          "Ref": "Public1TestInstance"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Public1Ec2ToEc2MessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIAPromPublic1TestInstancetoEc2MessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsAnalysis",
+      "Properties": {
+        "NetworkInsightsPathId": {
+          "Ref": "NIPPromPublic1TestInstancetoEc2MessagesVPCE"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Public1Ec2ToEc2MessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIPPromPublic2TestInstancetoEc2MessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsPath",
+      "Properties": {
+        "Destination": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-Ec2MessagesVpcEndpoint"
+          }
+        },
+        "DestinationPort": 443,
+        "Protocol": "tcp",
+        "Source": {
+          "Ref": "Public2TestInstance"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Public2Ec2ToEc2MessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    },
+    "NIAPromPublic2TestInstancetoEc2MessagesVPCE": {
+      "Type": "AWS::EC2::NetworkInsightsAnalysis",
+      "Properties": {
+        "NetworkInsightsPathId": {
+          "Ref": "NIPPromPublic2TestInstancetoEc2MessagesVPCE"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Public2Ec2ToEc2MessagesEndpoint"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": {
+              "Ref": "Project"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "App0TestInstanceId": {
+      "Value": {
+        "Ref": "App0TestInstance"
+      },
+      "Description": "App0 test Ec2 instance"
+    },
+    "App1TestInstanceId": {
+      "Value": {
+        "Ref": "App1TestInstance"
+      },
+      "Description": "App1 test Ec2 instance"
+    },
+    "App2TestInstanceId": {
+      "Value": {
+        "Ref": "App2TestInstance"
+      },
+      "Description": "App2 test Ec2 instance"
+    },
+    "Public0TestInstanceId": {
+      "Value": {
+        "Ref": "Public0TestInstance"
+      },
+      "Description": "Public0 test Ec2 instance"
+    },
+    "Public1TestInstanceId": {
+      "Value": {
+        "Ref": "Public1TestInstance"
+      },
+      "Description": "Public1 test Ec2 instance"
+    },
+    "Public2TestInstanceId": {
+      "Value": {
+        "Ref": "Public2TestInstance"
+      },
+      "Description": "Public2 test Ec2 instance"
+    }
+  }
+}

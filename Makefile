@@ -13,7 +13,7 @@ DEFAULT_BRANCH := main
 
 PUBLISH_BUCKET := natemarks-cloudformation-public
 PROJECT := cfn-vpc
-TEMPLATES := vpc.json
+TEMPLATES := $(shell ls *.json)
 
 help: ## Show this help.
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
@@ -46,7 +46,7 @@ quick-test: ## run taskcat to smoke test stack creation
 	)
 
 lint:  ##  run cfn validate
-	aws cloudformation validate-template --template-body file://vpc.json
+	$(foreach var,$(TEMPLATES),aws cloudformation validate-template --template-body file://$(var);)
 
 fmt: ## run gofmt
 	@go fmt ${PKG_LIST}
@@ -77,16 +77,15 @@ git-status: ## require status is clean so we can use undo_edits to put things ba
 rebase: git-status ## rebase current feature branch on to the default branch
 	git fetch && git rebase origin/$(DEFAULT_BRANCH)
 
-
 shellcheck:
 	find scripts -type f -name "*.sh" -exec "shellcheck" "--format=gcc" {} \;
 
+undo_edits: ## undo staged and unstaged change. ohmyzsh alias: grhh
+	git reset --hard
 
-${TEMPLATES}:
+publish: ## copy the ${TEMPLATES} files to the public s3 location
 	aws s3api put-object --bucket $(PUBLISH_BUCKET) \
 	--key $(PROJECT)/ ; \
-	aws s3 cp $@ s3://$(PUBLISH_BUCKET)/$(PROJECT)/$@ ; \
+	$(foreach var,$(TEMPLATES),aws s3 cp $(var) s3://$(PUBLISH_BUCKET)/$(PROJECT)/$(var);)
 
-publish: ${TEMPLATES} ## publish templates to public bucket
-	
-.PHONY: build release static  lint test publish ${TEMPLATES}
+.PHONY: build release static  lint test publish
