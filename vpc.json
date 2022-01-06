@@ -75,7 +75,13 @@
         "EnableDnsHostnames": true,
         "Tags": [
           {
-            "Key": "Application",
+            "Key": "Owner",
+            "Value": {
+              "Ref": "Owner"
+            }
+          },
+          {
+            "Key": "StackId",
             "Value": {
               "Ref": "AWS::StackId"
             }
@@ -222,7 +228,13 @@
         },
         "Tags": [
           {
-            "Key": "Application",
+            "Key": "Owner",
+            "Value": {
+              "Ref": "Owner"
+            }
+          },
+          {
+            "Key": "StackId",
             "Value": {
               "Ref": "AWS::StackId"
             }
@@ -276,7 +288,13 @@
         },
         "Tags": [
           {
-            "Key": "Application",
+            "Key": "Owner",
+            "Value": {
+              "Ref": "Owner"
+            }
+          },
+          {
+            "Key": "StackId",
             "Value": {
               "Ref": "AWS::StackId"
             }
@@ -330,7 +348,13 @@
         },
         "Tags": [
           {
-            "Key": "Application",
+            "Key": "Owner",
+            "Value": {
+              "Ref": "Owner"
+            }
+          },
+          {
+            "Key": "StackId",
             "Value": {
               "Ref": "AWS::StackId"
             }
@@ -384,7 +408,13 @@
         },
         "Tags": [
           {
-            "Key": "Application",
+            "Key": "Owner",
+            "Value": {
+              "Ref": "Owner"
+            }
+          },
+          {
+            "Key": "StackId",
             "Value": {
               "Ref": "AWS::StackId"
             }
@@ -438,7 +468,13 @@
         },
         "Tags": [
           {
-            "Key": "Application",
+            "Key": "Owner",
+            "Value": {
+              "Ref": "Owner"
+            }
+          },
+          {
+            "Key": "StackId",
             "Value": {
               "Ref": "AWS::StackId"
             }
@@ -492,7 +528,13 @@
         },
         "Tags": [
           {
-            "Key": "Application",
+            "Key": "Owner",
+            "Value": {
+              "Ref": "Owner"
+            }
+          },
+          {
+            "Key": "StackId",
             "Value": {
               "Ref": "AWS::StackId"
             }
@@ -546,7 +588,13 @@
         },
         "Tags": [
           {
-            "Key": "Application",
+            "Key": "Owner",
+            "Value": {
+              "Ref": "Owner"
+            }
+          },
+          {
+            "Key": "StackId",
             "Value": {
               "Ref": "AWS::StackId"
             }
@@ -600,7 +648,13 @@
         },
         "Tags": [
           {
-            "Key": "Application",
+            "Key": "Owner",
+            "Value": {
+              "Ref": "Owner"
+            }
+          },
+          {
+            "Key": "StackId",
             "Value": {
               "Ref": "AWS::StackId"
             }
@@ -654,7 +708,13 @@
         },
         "Tags": [
           {
-            "Key": "Application",
+            "Key": "Owner",
+            "Value": {
+              "Ref": "Owner"
+            }
+          },
+          {
+            "Key": "StackId",
             "Value": {
               "Ref": "AWS::StackId"
             }
@@ -679,7 +739,13 @@
       "Properties": {
         "Tags": [
           {
-            "Key": "Application",
+            "Key": "Owner",
+            "Value": {
+              "Ref": "Owner"
+            }
+          },
+          {
+            "Key": "StackId",
             "Value": {
               "Ref": "AWS::StackId"
             }
@@ -718,7 +784,13 @@
         },
         "Tags": [
           {
-            "Key": "Application",
+            "Key": "Owner",
+            "Value": {
+              "Ref": "Owner"
+            }
+          },
+          {
+            "Key": "StackId",
             "Value": {
               "Ref": "AWS::StackId"
             }
@@ -824,7 +896,13 @@
         "Domain": "vpc",
         "Tags": [
           {
-            "Key": "Application",
+            "Key": "Owner",
+            "Value": {
+              "Ref": "Owner"
+            }
+          },
+          {
+            "Key": "StackId",
             "Value": {
               "Ref": "AWS::StackId"
             }
@@ -858,7 +936,13 @@
         },
         "Tags": [
           {
-            "Key": "Application",
+            "Key": "Owner",
+            "Value": {
+              "Ref": "Owner"
+            }
+          },
+          {
+            "Key": "StackId",
             "Value": {
               "Ref": "AWS::StackId"
             }
@@ -886,7 +970,13 @@
         },
         "Tags": [
           {
-            "Key": "Application",
+            "Key": "Owner",
+            "Value": {
+              "Ref": "Owner"
+            }
+          },
+          {
+            "Key": "StackId",
             "Value": {
               "Ref": "AWS::StackId"
             }
@@ -925,7 +1015,13 @@
         "Domain": "vpc",
         "Tags": [
           {
-            "Key": "Application",
+            "Key": "Owner",
+            "Value": {
+              "Ref": "Owner"
+            }
+          },
+          {
+            "Key": "StackId",
             "Value": {
               "Ref": "AWS::StackId"
             }
@@ -959,7 +1055,13 @@
         },
         "Tags": [
           {
-            "Key": "Application",
+            "Key": "Owner",
+            "Value": {
+              "Ref": "Owner"
+            }
+          },
+          {
+            "Key": "StackId",
             "Value": {
               "Ref": "AWS::StackId"
             }
@@ -987,7 +1089,13 @@
         },
         "Tags": [
           {
-            "Key": "Application",
+            "Key": "Owner",
+            "Value": {
+              "Ref": "Owner"
+            }
+          },
+          {
+            "Key": "StackId",
             "Value": {
               "Ref": "AWS::StackId"
             }
@@ -1026,7 +1134,13 @@
         "Domain": "vpc",
         "Tags": [
           {
-            "Key": "Application",
+            "Key": "Owner",
+            "Value": {
+              "Ref": "Owner"
+            }
+          },
+          {
+            "Key": "StackId",
             "Value": {
               "Ref": "AWS::StackId"
             }
@@ -1060,7 +1174,13 @@
         },
         "Tags": [
           {
-            "Key": "Application",
+            "Key": "Owner",
+            "Value": {
+              "Ref": "Owner"
+            }
+          },
+          {
+            "Key": "StackId",
             "Value": {
               "Ref": "AWS::StackId"
             }
@@ -1088,7 +1208,13 @@
         },
         "Tags": [
           {
-            "Key": "Application",
+            "Key": "Owner",
+            "Value": {
+              "Ref": "Owner"
+            }
+          },
+          {
+            "Key": "StackId",
             "Value": {
               "Ref": "AWS::StackId"
             }
@@ -1139,7 +1265,13 @@
         ],
         "Tags": [
           {
-            "Key": "Application",
+            "Key": "Owner",
+            "Value": {
+              "Ref": "Owner"
+            }
+          },
+          {
+            "Key": "StackId",
             "Value": {
               "Ref": "AWS::StackId"
             }
@@ -1191,7 +1323,13 @@
         ],
         "Tags": [
           {
-            "Key": "Application",
+            "Key": "Owner",
+            "Value": {
+              "Ref": "Owner"
+            }
+          },
+          {
+            "Key": "StackId",
             "Value": {
               "Ref": "AWS::StackId"
             }

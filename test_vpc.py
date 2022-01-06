@@ -11,4 +11,4 @@ def test_topic():
 
             for output in stack.outputs:
                 output_dict[output.key] = output.value
-            assert "vpc-" in output_dict["VPC"]
+            assert "vpc-" in output_dict["VPCID"]
