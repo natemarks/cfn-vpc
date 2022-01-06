@@ -88,7 +88,6 @@ publish: git-status ## copy the ${TEMPLATES} files to the public s3 location
 	--key $(PROJECT)/ ; \
 	aws s3api put-object --bucket $(PUBLISH_BUCKET) \
 	--key $(PROJECT)/$(VERSION)/ ; \
-	$(foreach var,$(TEMPLATES),aws s3 cp $(var) s3://$(PUBLISH_BUCKET)/$(PROJECT)/$(var);) ; \
-	$(foreach var,$(TEMPLATES),aws s3 cp $(var) s3://$(PUBLISH_BUCKET)/$(PROJECT)/$(VERSION)/$(var);)
+	$(foreach var,$(TEMPLATES),aws s3 cp $(var) s3://$(PUBLISH_BUCKET)/$(PROJECT)/$(var);)
 
 .PHONY: build release static  lint test publish
